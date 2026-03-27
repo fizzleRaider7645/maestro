@@ -1,0 +1,93 @@
+# =============================================================================
+# agent.schema.yaml
+# Base schema for all agents in the Agent Builder system.
+# Every agent config (agent.yaml) must conform to this schema.
+# =============================================================================
+
+$schema: "agent-builder/v1"
+
+# ---------------------------------------------------------------------------
+# IDENTITY
+# ---------------------------------------------------------------------------
+identity:
+  id: string                  # Unique snake_case identifier (e.g., system_design_architect)
+  name: string                # Human-readable name (e.g., "System Design Architect")
+  version: string             # Semver (e.g., "1.0.0")
+  discipline:                 # Primary engineering discipline
+    enum:
+      - system_design
+      - software_engineering
+      - testing_qa
+      - devops_infra
+  role: string                # Short role descriptor (e.g., "Lead Architect")
+  persona_file: string        # Relative path to the companion persona.md
+
+# ---------------------------------------------------------------------------
+# BEHAVIOR
+# ---------------------------------------------------------------------------
+behavior:
+  tone:
+    enum:
+      - analytical            # Data-driven, precise, structured
+      - collaborative         # Team-oriented, open to alternatives
+      - pragmatic             # Trade-off aware, delivery-focused
+      - critical              # Devil's advocate, challenge assumptions
+  verbosity:
+    enum:
+      - concise               # Short answers, decisions only
+      - balanced              # Reasoning + decision
+      - thorough              # Full analysis + alternatives + recommendation
+  reasoning_style:
+    enum:
+      - first_principles      # Break problems to fundamentals
+      - pattern_matching      # Apply known patterns and heuristics
+      - trade_off_analysis    # Always enumerate pros/cons before deciding
+      - hypothesis_driven     # Propose → validate → iterate
+
+# ---------------------------------------------------------------------------
+# CAPABILITIES
+# ---------------------------------------------------------------------------
+capabilities:
+  primary: list[string]       # Core competencies this agent owns
+  secondary: list[string]     # Supporting competencies (consulted, not owned)
+  anti_patterns: list[string] # Things this agent explicitly flags and avoids
+
+# ---------------------------------------------------------------------------
+# INPUTS / OUTPUTS
+# ---------------------------------------------------------------------------
+io:
+  accepts:                    # What this agent can receive as input
+    - type: string            # e.g., "requirements_doc", "architecture_diagram", "code_file"
+      format: string          # e.g., "markdown", "yaml", "python", "text"
+      required: boolean
+  produces:                   # What this agent outputs
+    - type: string
+      format: string
+      schema_ref: string      # Optional pointer to an output schema
+
+# ---------------------------------------------------------------------------
+# HANDOFF PROTOCOL
+# ---------------------------------------------------------------------------
+handoffs:
+  upstream: list[string]      # Agent IDs that feed INTO this agent
+  downstream: list[string]    # Agent IDs this agent feeds INTO
+  trigger_conditions:         # Conditions that trigger a handoff
+    - condition: string       # e.g., "design_approved"
+      to: string              # Target agent ID
+      payload: list[string]   # Fields passed in handoff context
+
+# ---------------------------------------------------------------------------
+# CONSTRAINTS
+# ---------------------------------------------------------------------------
+constraints:
+  scope_limits: list[string]       # What this agent must NOT do
+  escalation_triggers: list[string] # Conditions that require human review
+  confidence_threshold: float       # 0.0–1.0. Below this, agent asks for clarification
+
+# ---------------------------------------------------------------------------
+# EVALUATION
+# ---------------------------------------------------------------------------
+evaluation:
+  success_criteria: list[string]    # Measurable outcomes of a successful run
+  self_check_prompts: list[string]  # Questions the agent asks itself before finalizing output
+  review_checklist: list[string]    # Checklist surfaced to downstream agent or human reviewer

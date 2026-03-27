@@ -1,0 +1,242 @@
+# =============================================================================
+# pipeline.yaml — Agent Orchestration Pipeline
+# Defines how agents interact, hand off, and collaborate within the system.
+# =============================================================================
+
+$schema: "agent-builder/v1"
+pipeline_version: "1.0.0"
+name: "SE Agent Pipeline"
+description: >
+  The standard software engineering pipeline. A requirements document enters at
+  the top, flows through design → implementation → testing → deployment, with
+  review gates and feedback loops at each stage.
+
+# ---------------------------------------------------------------------------
+# PIPELINE STAGES
+# ---------------------------------------------------------------------------
+
+stages:
+
+  - id: design
+    name: "System Design"
+    agent: system_design_architect
+    description: >
+      Translates requirements into a documented, reviewed architecture.
+      Nothing proceeds to implementation until this stage produces an
+      approved set of design artifacts.
+    inputs:
+      - requirements_doc
+      - system_constraints       # optional
+      - existing_architecture    # optional
+      - nfr_spec                 # optional
+    outputs:
+      - architecture_overview
+      - component_diagram
+      - data_flow_diagram
+      - nfr_baseline
+      - tech_stack_recommendation
+      - risk_register
+      - adrs
+    gate:
+      type: human_approval
+      approver: stakeholder
+      approval_criteria:
+        - "All ADRs reviewed and signed off"
+        - "NFR targets agreed by product and engineering"
+        - "Risk register accepted with mitigation owners assigned"
+      on_reject:
+        action: revise
+        return_to: design
+        with_feedback: true
+
+  - id: implementation
+    name: "Software Engineering"
+    agent: software_engineer
+    description: >
+      Implements the design. Produces application code, API contracts,
+      and data migration scripts. Cannot proceed without approved design artifacts.
+    depends_on:
+      - stage: design
+        condition: approved
+    inputs:
+      - architecture_overview
+      - component_diagram
+      - data_flow_diagram
+      - tech_stack_recommendation
+      - nfr_baseline
+    outputs:
+      - source_code
+      - api_contracts
+      - data_migration_scripts
+      - unit_tests
+      - implementation_notes
+    gate:
+      type: peer_review
+      reviewer: qa_engineer
+      approval_criteria:
+        - "Code meets the component boundaries defined in the architecture"
+        - "API contracts match the design's interface definitions"
+        - "No anti-patterns flagged by system_design_architect are present"
+      on_reject:
+        action: revise
+        return_to: implementation
+        with_feedback: true
+
+  - id: testing
+    name: "Quality Assurance"
+    agent: qa_engineer
+    description: >
+      Produces test strategy, test plans, and executes tests against the
+      implementation. Owns the quality gate before deployment is authorized.
+    depends_on:
+      - stage: design
+        condition: approved
+      - stage: implementation
+        condition: peer_reviewed
+    inputs:
+      - architecture_overview
+      - nfr_baseline
+      - risk_register
+      - source_code
+      - api_contracts
+    outputs:
+      - test_strategy
+      - test_plan
+      - test_results
+      - coverage_report
+      - nfr_validation_report
+    gate:
+      type: automated_plus_human
+      automated_criteria:
+        - "Unit test coverage >= 80%"
+        - "Integration test coverage of all inter-service contracts"
+        - "All p95 NFR targets met under simulated load"
+        - "Zero P0 or P1 defects open"
+      human_approval_required: true
+      approver: qa_engineer
+      on_reject:
+        action: return_to_implementation
+        return_to: implementation
+        with_defect_report: true
+
+  - id: deployment
+    name: "DevOps & Infrastructure"
+    agent: devops_engineer
+    description: >
+      Designs and executes the infrastructure, CI/CD pipeline, and deployment
+      strategy. Owns the production release gate.
+    depends_on:
+      - stage: design
+        condition: approved
+      - stage: testing
+        condition: quality_gate_passed
+    inputs:
+      - architecture_overview
+      - component_diagram
+      - tech_stack_recommendation
+      - nfr_baseline
+      - test_results
+      - nfr_validation_report
+    outputs:
+      - infrastructure_as_code
+      - cicd_pipeline_definition
+      - deployment_runbook
+      - rollback_plan
+      - observability_config
+      - cost_estimate
+    gate:
+      type: human_approval
+      approver: stakeholder
+      approval_criteria:
+        - "Deployment runbook reviewed by on-call team"
+        - "Rollback plan tested in staging"
+        - "Observability dashboards and alerts live in staging"
+        - "Cost estimate reviewed and approved"
+        - "Go/no-go checklist signed off"
+      on_reject:
+        action: revise
+        return_to: deployment
+        with_feedback: true
+
+# ---------------------------------------------------------------------------
+# FEEDBACK LOOPS
+# ---------------------------------------------------------------------------
+
+feedback_loops:
+
+  - id: implementation_to_design
+    trigger: "Implementation reveals design ambiguity or infeasibility"
+    from: software_engineer
+    to: system_design_architect
+    payload:
+      - implementation_notes
+      - specific_design_questions
+    outcome: "Architect issues a design clarification or ADR amendment"
+
+  - id: testing_to_design
+    trigger: "Testing reveals a systemic architectural defect (not a code bug)"
+    from: qa_engineer
+    to: system_design_architect
+    payload:
+      - defect_report
+      - nfr_validation_report
+    outcome: "Architect issues a revised architecture_overview and updated ADR"
+
+  - id: testing_to_implementation
+    trigger: "Testing reveals code-level defects"
+    from: qa_engineer
+    to: software_engineer
+    payload:
+      - defect_report
+      - failing_test_cases
+    outcome: "Engineer resolves defects, re-submits for testing gate"
+
+  - id: deployment_to_design
+    trigger: "Infrastructure constraints cannot be met by the current design"
+    from: devops_engineer
+    to: system_design_architect
+    payload:
+      - infrastructure_constraints
+      - operational_risk_notes
+    outcome: "Architect and DevOps Engineer jointly revise impacted design artifacts"
+
+# ---------------------------------------------------------------------------
+# GLOBAL ESCALATION RULES
+# ---------------------------------------------------------------------------
+
+escalation:
+  immediate_human_review:
+    - "Security vulnerability discovered (any severity) in a design artifact or implementation"
+    - "Regulatory compliance violation identified at any stage"
+    - "A stage has been revised more than 3 times without progressing through its gate"
+    - "Two agents produce contradictory recommendations on the same decision"
+    - "An agent's confidence score drops below 0.75 on a critical decision"
+
+# ---------------------------------------------------------------------------
+# AGENT REGISTRY
+# ---------------------------------------------------------------------------
+
+agent_registry:
+  - id: system_design_architect
+    version: "1.0.0"
+    config: "agents/system-design-architect/agent.yaml"
+    persona: "agents/system-design-architect/persona.md"
+    status: active
+
+  - id: software_engineer
+    version: "0.1.0"
+    config: "agents/software-engineer/agent.yaml"
+    persona: "agents/software-engineer/persona.md"
+    status: stub
+
+  - id: qa_engineer
+    version: "0.1.0"
+    config: "agents/qa-engineer/agent.yaml"
+    persona: "agents/qa-engineer/persona.md"
+    status: stub
+
+  - id: devops_engineer
+    version: "0.1.0"
+    config: "agents/devops-engineer/agent.yaml"
+    persona: "agents/devops-engineer/persona.md"
+    status: stub

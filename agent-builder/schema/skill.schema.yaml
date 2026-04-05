@@ -1,0 +1,45 @@
+# =============================================================================
+# skill.schema.yaml
+# Schema for all skill definitions in the Maestro skill registry.
+# Every skill directory must contain a skill.yaml conforming to this schema.
+# =============================================================================
+
+$schema: "agent-builder/v1"
+
+# ---------------------------------------------------------------------------
+# IDENTITY
+# ---------------------------------------------------------------------------
+id: string                    # Unique snake_case identifier (matches tool_name in API calls)
+name: string                  # Human-readable name
+description: string           # One-sentence description shown to the agent
+
+# ---------------------------------------------------------------------------
+# PARAMETERS
+# (JSON Schema for the skill's input — used to build the Anthropic tool definition)
+# ---------------------------------------------------------------------------
+parameters:
+  - name: string              # Parameter name
+    type: string              # JSON Schema type: string, integer, boolean, array, object
+    description: string       # Description shown to the agent
+    required: boolean         # Whether the parameter is required
+    default: any              # Optional default value
+
+# ---------------------------------------------------------------------------
+# PERMISSIONS
+# ---------------------------------------------------------------------------
+permissions:
+  - string                    # Permission tokens required to invoke this skill
+                              # e.g., filesystem_read, filesystem_write, network, code_exec
+
+# ---------------------------------------------------------------------------
+# ACCESS CONTROL
+# ---------------------------------------------------------------------------
+allowed_agents:
+  - string                    # Agent IDs allowed to invoke this skill
+                              # Use ["*"] to allow all agents
+
+# ---------------------------------------------------------------------------
+# METADATA
+# ---------------------------------------------------------------------------
+category: string              # Grouping: filesystem, artifact, network, code, custom
+version: string               # Semver

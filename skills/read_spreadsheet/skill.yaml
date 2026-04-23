@@ -1,0 +1,18 @@
+id: read_spreadsheet
+name: "Read Spreadsheet"
+description: "Read an Excel or CSV file and return its contents as a markdown table."
+version: "1.0.0"
+category: filesystem
+parameters:
+  - name: path
+    type: string
+    required: true
+  - name: sheet_name
+    type: string
+    required: false
+  - name: max_rows
+    type: integer
+    required: false
+allowed_agents:
+  - property_manager
+  - deal_analyst

@@ -7,11 +7,35 @@ against the stage outputs before surfacing the gate to a human reviewer.
 
 from __future__ import annotations
 import os
+import re
 
 import anthropic
 
 from ..core.types import AgentConfig, GateConfig
 from ..core.constants import DEFAULT_MODEL
+
+
+def _parse_verdict(report: str) -> bool:
+    """
+    Extract PASS/FAIL from the Overall Verdict section of an evaluator report.
+
+    Handles LLM formatting variations:
+    - Blank line between heading and verdict
+    - Bold markdown (**PASS**)
+    - Trailing text after the verdict word
+    """
+    match = re.search(
+        r'###\s*Overall\s+Verdict\s*\n+\s*\**\s*(PASS|FAIL)\s*\**',
+        report,
+        re.IGNORECASE,
+    )
+    if match:
+        return match.group(1).upper() == "PASS"
+    # Fallback: compare PASS/FAIL frequency in the last 300 characters
+    tail = report[-300:].upper()
+    pass_count = tail.count("PASS")
+    fail_count = tail.count("FAIL")
+    return pass_count > 0 and pass_count >= fail_count
 
 
 class EvaluatorAgent:
@@ -85,7 +109,7 @@ class EvaluatorAgent:
                 messages=[{"role": "user", "content": prompt}],
             )
             report = response.content[0].text if response.content else "No evaluation produced."
-            passed = "### Overall Verdict\nPASS" in report or report.strip().endswith("PASS")
+            passed = _parse_verdict(report)
             return passed, report
         except Exception as e:
             return True, f"Evaluator error (defaulting to pass): {e}"

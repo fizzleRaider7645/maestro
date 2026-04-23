@@ -1,6 +1,7 @@
 """Executes a single pipeline stage."""
 
 from __future__ import annotations
+import asyncio
 from pathlib import Path
 from typing import Any
 
@@ -77,7 +78,9 @@ class StageRunner:
             artifact_store=self.artifact_store,
             verbose=self.verbose,
         )
-        handoff = runner.run(user_message, context=context, stage_id=stage_id)
+        handoff = await asyncio.to_thread(
+            runner.run, user_message, context=context, stage_id=stage_id
+        )
 
         # Persist the primary output artifact
         ref = self.artifact_store.write(
@@ -93,15 +96,24 @@ class StageRunner:
     def _gather_context(self, stage_config: StageConfig, run_state: Any) -> dict[str, Any]:
         """Collect upstream artifacts relevant to this stage's input requirements."""
         context: dict[str, Any] = {}
+        # Only search stages this stage explicitly depends on, plus the input stage
+        dep_stage_ids = {dep.stage for dep in stage_config.depends_on} | {"input"}
+
+        # Fallback: include primary_output from each upstream dep stage (always present
+        # after a stage completes, even when agents don't call write_artifact explicitly)
+        for dep_stage_id in dep_stage_ids:
+            primary = self.artifact_store.read(dep_stage_id, "primary_output")
+            if primary:
+                context[f"{dep_stage_id}_output"] = primary
+
+        # Override with typed artifacts where available (agents using write_artifact skill)
         for input_type in stage_config.inputs:
-            # Search all completed upstream stages for this artifact type
-            for stage_id, stage_state in run_state.stages.items():
-                if stage_id == stage_config.id:
-                    continue
-                content = self.artifact_store.read(stage_id, input_type)
+            for dep_stage_id in dep_stage_ids:
+                content = self.artifact_store.read(dep_stage_id, input_type)
                 if content:
                     context[input_type] = content
                     break
+
         return context
 
     def _build_task_message(self, stage_config: StageConfig, context: dict[str, Any]) -> str:

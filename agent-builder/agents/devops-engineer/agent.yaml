@@ -1,7 +1,6 @@
 # =============================================================================
 # agent.yaml — DevOps Engineer
 # Schema: agent-builder/v1
-# Status: STUB — fill in using system-design-architect as reference
 # =============================================================================
 
 $schema: "agent-builder/v1"
@@ -9,7 +8,7 @@ $schema: "agent-builder/v1"
 identity:
   id: devops_engineer
   name: "DevOps Engineer"
-  version: "0.1.0"
+  version: "1.0.0"
   discipline: devops_infra
   role: "Infrastructure & Release Owner"
   persona_file: "./persona.md"

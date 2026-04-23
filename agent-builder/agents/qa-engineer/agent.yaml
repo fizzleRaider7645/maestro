@@ -1,7 +1,6 @@
 # =============================================================================
 # agent.yaml — QA Engineer
 # Schema: agent-builder/v1
-# Status: STUB — fill in using system-design-architect as reference
 # =============================================================================
 
 $schema: "agent-builder/v1"
@@ -9,7 +8,7 @@ $schema: "agent-builder/v1"
 identity:
   id: qa_engineer
   name: "QA Engineer"
-  version: "0.1.0"
+  version: "1.0.0"
   discipline: testing_qa
   role: "Quality Gate Owner"
   persona_file: "./persona.md"

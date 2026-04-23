@@ -1,0 +1,17 @@
+id: update_property_kpis
+name: "Update Property KPIs"
+description: "Read or update persistent KPI data for a rental property across sessions."
+version: "1.0.0"
+category: custom
+parameters:
+  - name: mode
+    type: string
+    required: true
+  - name: property_id
+    type: string
+    required: false
+  - name: updates
+    type: object
+    required: false
+allowed_agents:
+  - property_manager

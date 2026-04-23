@@ -224,19 +224,19 @@ agent_registry:
     status: active
 
   - id: software_engineer
-    version: "0.1.0"
+    version: "1.0.0"
     config: "agents/software-engineer/agent.yaml"
     persona: "agents/software-engineer/persona.md"
-    status: stub
+    status: active
 
   - id: qa_engineer
-    version: "0.1.0"
+    version: "1.0.0"
     config: "agents/qa-engineer/agent.yaml"
     persona: "agents/qa-engineer/persona.md"
-    status: stub
+    status: active
 
   - id: devops_engineer
-    version: "0.1.0"
+    version: "1.0.0"
     config: "agents/devops-engineer/agent.yaml"
     persona: "agents/devops-engineer/persona.md"
-    status: stub
+    status: active

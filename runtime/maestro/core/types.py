@@ -36,7 +36,6 @@ class Discipline(str, Enum):
     SOFTWARE_ENGINEERING = "software_engineering"
     TESTING_QA = "testing_qa"
     DEVOPS_INFRA = "devops_infra"
-    REAL_ESTATE = "real_estate"
 
 
 class GateType(str, Enum):
